@@ -1,6 +1,17 @@
 services:
-  # Set-it-and-forget-it: runs a check every 24 hours automatically.
-  # Start with: docker compose up -d scheduler
+  # Web dashboard: docker compose up -d web
+  # Open http://localhost:5000
+  web:
+    build: .
+    env_file: .env
+    volumes:
+      - bill-data:/data
+    ports:
+      - "5000:5000"
+    entrypoint: ["python", "web.py"]
+    restart: unless-stopped
+
+  # Automated daily scan (runs alongside web)
   scheduler:
     build: .
     env_file: .env
@@ -14,7 +25,7 @@ services:
       done
     restart: unless-stopped
 
-  # Manual one-shot use: docker compose run --rm app check|list|report
+  # Manual one-shot: docker compose run --rm app check|list|report
   app:
     build: .
     env_file: .env

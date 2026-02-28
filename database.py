@@ -173,6 +173,12 @@ class Database:
         ).fetchall()
         return [dict(r) for r in rows]
 
+    def get_last_run(self):
+        row = self.conn.execute(
+            "SELECT * FROM runs ORDER BY run_at DESC LIMIT 1"
+        ).fetchone()
+        return dict(row) if row else None
+
     def log_run(self, bills_found, new_bills, updated_bills):
         self.conn.execute(
             "INSERT INTO runs (run_at, bills_found, new_bills, updated_bills) VALUES (?,?,?,?)",

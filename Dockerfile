@@ -6,6 +6,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY *.py .
+COPY templates/ templates/
 
 # Database is stored in a mounted volume at /data
 ENV DB_PATH=/data/bills.db

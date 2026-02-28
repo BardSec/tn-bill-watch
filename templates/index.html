@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — TN Education Bill Watch{% endblock %}
+
+{% block content %}
+
+<!-- Stats -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="num">{{ total }}</div>
+    <div class="lbl">Bills Tracked</div>
+  </div>
+  <div class="stat-card">
+    <div class="num" style="color:#1e40af">{{ n_active }}</div>
+    <div class="lbl">Active</div>
+  </div>
+  <div class="stat-card">
+    <div class="num" style="color:#065f46">{{ n_passed }}</div>
+    <div class="lbl">Passed</div>
+  </div>
+  <div class="stat-card">
+    <div class="num" style="color:#991b1b">{{ n_failed }}</div>
+    <div class="lbl">Failed / Vetoed</div>
+  </div>
+</div>
+
+{% if last_run %}
+<p style="color:#6b7280;font-size:.8rem;margin-bottom:1rem">
+  Last scan: {{ last_run.run_at[:19].replace('T',' ') }} UTC
+  &middot; {{ last_run.bills_found }} bills found
+  &middot; {{ last_run.new_bills }} new
+  &middot; {{ last_run.updated_bills }} updated
+</p>
+{% endif %}
+
+<div class="content-grid">
+
+  <!-- Bills panel -->
+  <div>
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <a href="/" class="filter-btn {% if not status_filter %}active{% endif %}">All ({{ total }})</a>
+      {% for code, label in STATUS_LABELS.items() %}
+        {% if status_counts.get(code, 0) > 0 %}
+          <a href="/?status={{ code }}"
+             class="filter-btn {% if status_filter == code|string %}active{% endif %}">
+            {{ label }} ({{ status_counts.get(code, 0) }})
+          </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    <div class="card">
+      {% if bills %}
+      <table>
+        <thead>
+          <tr>
+            <th>Bill</th>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Updated</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for bill in bills %}
+          <tr>
+            <td style="white-space:nowrap;font-weight:600">
+              <a href="/bill/{{ bill.bill_id }}">{{ bill.bill_number }}</a>
+            </td>
+            <td>
+              <a href="/bill/{{ bill.bill_id }}">{{ bill.title }}</a>
+            </td>
+            <td>
+              {% set color = STATUS_COLORS.get(bill.status, 'neutral') %}
+              <span class="badge badge-{{ color }}">
+                {{ STATUS_LABELS.get(bill.status, 'Unknown') }}
+              </span>
+            </td>
+            <td style="white-space:nowrap;color:#6b7280">
+              {{ bill.last_updated[:10] if bill.last_updated else '—' }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty">
+        {% if total == 0 %}
+          No bills tracked yet. Run a scan to get started.
+        {% else %}
+          No bills match the selected filter.
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Activity feed -->
+  <div>
+    <div class="card">
+      <div class="card-header">Recent Activity</div>
+      <div class="card-body" style="padding:.5rem .75rem">
+        {% if events %}
+        <ul class="activity-list">
+          {% for ev in events %}
+          <li>
+            <span class="activity-bill">
+              <a href="/bill/{{ ev.bill_id }}">{{ ev.bill_number }}</a>
+            </span>
+            {% if ev.event_type == 'new' %}
+              — new bill tracked
+            {% elif ev.event_type == 'status_change' %}
+              — {{ STATUS_LABELS.get(ev.old_value|int, ev.old_value) }}
+              &rarr; {{ STATUS_LABELS.get(ev.new_value|int, ev.new_value) }}
+            {% else %}
+              — content updated
+            {% endif %}
+            <span class="activity-time">{{ ev.recorded_at[:16].replace('T',' ') }} UTC</span>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div class="empty">No activity yet.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

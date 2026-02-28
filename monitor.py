@@ -78,6 +78,13 @@ _EDUCATION_PATTERNS = [
 _COMPILED_PATTERNS = [re.compile(p, re.IGNORECASE) for p in _EDUCATION_PATTERNS]
 
 # ---------------------------------------------------------------------------
+# Title prefixes that identify non-substantive bills to ignore entirely
+# ---------------------------------------------------------------------------
+_IGNORE_PREFIXES = (
+    "a resolution to honor",
+)
+
+# ---------------------------------------------------------------------------
 # LegiScan status codes → human-readable labels
 # ---------------------------------------------------------------------------
 STATUS_LABELS = {
@@ -111,7 +118,13 @@ def is_education_related(bill):
     Return True if the bill appears to be education-related, based on:
       1. LegiScan subject tags
       2. Keywords in the title and description
+
+    Returns False for bills matching _IGNORE_PREFIXES regardless of content.
     """
+    title = bill.get("title", "")
+    if any(title.lower().startswith(p) for p in _IGNORE_PREFIXES):
+        return False
+
     # 1. Check subject tags (present on full bill objects)
     for subj in bill.get("subjects", []):
         name = subj.get("subject_name", "") if isinstance(subj, dict) else str(subj)
@@ -201,6 +214,8 @@ class BillMonitor:
 
             try:
                 bill = self.client.get_bill(bill_id)
+                if not is_education_related(bill):
+                    continue
                 events = self.db.upsert_bill(bill)
                 for event_type, old_val, new_val in events:
                     if event_type == "new":

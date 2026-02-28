@@ -1,11 +1,26 @@
 services:
-  tn-bill-watch:
+  # Set-it-and-forget-it: runs a check every 24 hours automatically.
+  # Start with: docker compose up -d scheduler
+  scheduler:
     build: .
     env_file: .env
     volumes:
       - bill-data:/data
-    # Default command: check for new/updated bills
-    # Override at runtime: docker compose run tn-bill-watch list
+    entrypoint: ["/bin/sh", "-c"]
+    command: >
+      while true; do
+        python main.py check --notify;
+        sleep 86400;
+      done
+    restart: unless-stopped
+
+  # Manual one-shot use: docker compose run --rm app check|list|report
+  app:
+    build: .
+    env_file: .env
+    volumes:
+      - bill-data:/data
+    profiles: ["manual"]
     command: check
 
 volumes:

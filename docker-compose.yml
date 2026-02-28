@@ -1,0 +1,12 @@
+services:
+  tn-bill-watch:
+    build: .
+    env_file: .env
+    volumes:
+      - bill-data:/data
+    # Default command: check for new/updated bills
+    # Override at runtime: docker compose run tn-bill-watch list
+    command: check
+
+volumes:
+  bill-data:
